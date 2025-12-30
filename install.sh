@@ -24,8 +24,9 @@ else
 fi
 
 # Install Oh My Zsh
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
+if [ ! -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
     echo "📦 Installing Oh My Zsh..."
+    rm -rf "$HOME/.oh-my-zsh"  # Remove broken directory if exists
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 else
     echo "✅ Oh My Zsh already installed"
