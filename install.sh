@@ -10,29 +10,33 @@ if [ -z "$1" ]; then
 fi
 
 TARGET=$1
+USER=$(echo $TARGET | cut -d@ -f1)
+HOST=$(echo $TARGET | cut -d@ -f2)
+
 echo "🚀 Setting up $TARGET..."
 
-# Step 1: Install Oh My Zsh
+# Check if Oh My Zsh already exists
 echo "📦 Installing Oh My Zsh..."
-ssh $TARGET 'sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
+ssh $TARGET 'if [ ! -d ~/.oh-my-zsh ]; then sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended; else echo "Oh My Zsh already installed"; fi'
 
-# Step 2: Install Powerlevel10k
+# Install Powerlevel10k
 echo "🎨 Installing Powerlevel10k..."
-ssh $TARGET 'git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k'
+ssh $TARGET 'if [ ! -d ~/.oh-my-zsh/custom/themes/powerlevel10k ]; then git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.oh-my-zsh/custom/themes/powerlevel10k; else echo "Powerlevel10k already installed"; fi'
 
-# Step 3: Install plugins
+# Install plugins
 echo "🔌 Installing zsh plugins..."
-ssh $TARGET 'git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions'
-ssh $TARGET 'git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting'
+ssh $TARGET 'if [ ! -d ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions ]; then git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions; else echo "zsh-autosuggestions already installed"; fi'
 
-# Step 4: Copy your configs
+ssh $TARGET 'if [ ! -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting ]; then git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting; else echo "zsh-syntax-highlighting already installed"; fi'
+
+# Copy configs with FULL PATHS
 echo "📋 Copying your .zshrc and .p10k.zsh..."
-scp ~/.zshrc $TARGET:~/.zshrc
-scp ~/.p10k.zsh $TARGET:~/.p10k.zsh 2>/dev/null || echo "⚠️  No .p10k.zsh found (will be created on first run)"
+scp ~/.zshrc $TARGET:/root/.zshrc
+[ -f ~/.p10k.zsh ] && scp ~/.p10k.zsh $TARGET:/root/.p10k.zsh || echo "⚠️  No .p10k.zsh found (will be created on first run)"
 
-# Step 5: Change default shell
+# Change default shell
 echo "🐚 Setting zsh as default shell..."
-ssh $TARGET 'sudo chsh -s $(which zsh) $(whoami)' 2>/dev/null || ssh $TARGET 'chsh -s $(which zsh)'
+ssh $TARGET 'chsh -s $(which zsh) 2>/dev/null || sudo chsh -s $(which zsh) $(whoami) 2>/dev/null || echo "Could not change shell automatically"'
 
 echo ""
 echo "✅ Setup complete for $TARGET!"
